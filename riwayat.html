@@ -109,6 +109,10 @@ let allTrx = [];
   initSidebar();
   renderNav();
   
+  if (session.role === "Owner") {
+    document.getElementById("btn-export").style.display = "inline-flex";
+  }
+
   const cfg = await getConfig();
   if (cfg.nama_toko) document.getElementById("sb-toko").textContent = cfg.nama_toko;
 
@@ -119,7 +123,6 @@ let allTrx = [];
 
   if (session.role === "Owner" || session.role === "Admin") {
     document.getElementById("filter-kasir-wrap").style.display = "block";
-    document.getElementById("btn-export").style.display = "inline-flex";
     loadKasirOptions();
   }
 
