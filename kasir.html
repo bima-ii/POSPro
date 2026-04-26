@@ -412,10 +412,10 @@ function addToCart(idProduk) {
 
 function renderCart() {
   const cont = document.getElementById("cart-items");
-  const empty = document.getElementById("cart-empty");
-  if (cart.length === 0) { cont.innerHTML = ""; cont.appendChild(empty); empty.style.display="block"; }
+  if (cart.length === 0) { 
+    cont.innerHTML = `<div class="empty-state" id="cart-empty"><div class="empty-icon">🛒</div><p>Keranjang kosong</p></div>`; 
+  }
   else {
-    empty.style.display = "none";
     let html = "";
     cart.forEach((c, i) => {
       html += `
