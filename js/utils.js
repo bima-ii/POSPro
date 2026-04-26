@@ -99,10 +99,11 @@ function nowJakarta() {
   return new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
 }
 function todayJakarta() {
-  return new Date().toLocaleDateString("id-ID", {
-    timeZone: "Asia/Jakarta",
-    day: "2-digit", month: "2-digit", year: "numeric"
-  }).split("/").join("/");
+  const d = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = d.getFullYear();
+  return `${dd}/${mm}/${yy}`;
 }
 
 // ── Modal Helpers ──
@@ -179,10 +180,37 @@ function renderNav(activeHref) {
   }
 }
 
+function confirmDialog(msg, onConfirm) {
+  let ov = document.getElementById("custom-confirm");
+  if (!ov) {
+    ov = document.createElement("div");
+    ov.id = "custom-confirm";
+    ov.className = "modal-overlay";
+    ov.innerHTML = `
+      <div class="modal" style="max-width:350px;">
+        <div class="modal-header"><h3 style="color:var(--danger)">Konfirmasi</h3><button class="modal-close" onclick="document.getElementById('custom-confirm').classList.remove('active')">✕</button></div>
+        <div class="modal-body"><p id="confirm-msg"></p></div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="document.getElementById('custom-confirm').classList.remove('active')">Batal</button>
+          <button class="btn btn-danger" id="confirm-btn">Ya, Lanjutkan</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(ov);
+  }
+  document.getElementById("confirm-msg").textContent = msg;
+  ov.classList.add("active");
+  document.getElementById("confirm-btn").onclick = () => {
+    ov.classList.remove("active");
+    if (typeof onConfirm === "function") onConfirm();
+  };
+}
+
 function logout() {
-  if (!confirm("Yakin logout?")) return;
-  clearSession();
-  goToPage("index.html");
+  confirmDialog("Yakin ingin logout dari sistem?", () => {
+    clearSession();
+    goToPage("index.html");
+  });
 }
 
 // ── Pengaturan Cache ──
