@@ -174,9 +174,9 @@
     })();
 
     function redirectByRole(role) {
-      if (role === "Kasir") location.href = "/kasir.html";
-      else if (role === "Admin") location.href = "/kasir.html";
-      else location.href = "/kasir.html";
+      if (role === "Kasir") goToPage("kasir.html");
+      else if (role === "Admin") goToPage("kasir.html");
+      else goToPage("kasir.html");
     }
 
     // Load nama toko
