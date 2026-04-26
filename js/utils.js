@@ -4,6 +4,20 @@
 
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypBqJkk9IguUJnym0AIonG3nf498sE2CXRnH8qKMfbopU8Jr6g3faNWCGI4pTjWItA4w/exec";
 
+// ── Routing Helper ──
+function goToPage(page) {
+  let path = window.location.pathname;
+  if (!path.endsWith('/')) {
+    let lastSlash = path.lastIndexOf('/');
+    if (path.includes('.html')) {
+      path = path.substring(0, lastSlash + 1);
+    } else {
+      path += '/';
+    }
+  }
+  window.location.href = path + page;
+}
+
 // ── Session ──
 function getSession() {
   try { return JSON.parse(sessionStorage.getItem("pos_session")); } catch { return null; }
@@ -13,8 +27,8 @@ function clearSession() { sessionStorage.removeItem("pos_session"); }
 
 function requireSession(allowedRoles) {
   const s = getSession();
-  if (!s) { location.href = "/index.html"; return null; }
-  if (allowedRoles && !allowedRoles.includes(s.role)) { location.href = "/index.html"; return null; }
+  if (!s) { goToPage("index.html"); return null; }
+  if (allowedRoles && !allowedRoles.includes(s.role)) { goToPage("index.html"); return null; }
   return s;
 }
 
@@ -138,19 +152,19 @@ function renderNav(activeHref) {
   if (!nav) return;
 
   const menus = [
-    { href: "/kasir.html", icon: "🛒", label: "Kasir", roles: ["Owner", "Admin", "Kasir"] },
-    { href: "/riwayat.html", icon: "📋", label: "Riwayat", roles: ["Owner", "Admin", "Kasir"] },
-    { href: "/produk.html", icon: "📦", label: "Produk & Stok", roles: ["Owner", "Admin"] },
-    { href: "/laporan.html", icon: "📊", label: "Laporan", roles: ["Owner", "Admin"] },
-    { href: "/pengaturan.html", icon: "⚙️", label: "Pengaturan", roles: ["Owner"] },
+    { href: "kasir.html", icon: "🛒", label: "Kasir", roles: ["Owner", "Admin", "Kasir"] },
+    { href: "riwayat.html", icon: "📋", label: "Riwayat", roles: ["Owner", "Admin", "Kasir"] },
+    { href: "produk.html", icon: "📦", label: "Produk & Stok", roles: ["Owner", "Admin"] },
+    { href: "laporan.html", icon: "📊", label: "Laporan", roles: ["Owner", "Admin"] },
+    { href: "pengaturan.html", icon: "⚙️", label: "Pengaturan", roles: ["Owner"] },
   ];
 
   let html = "";
   menus.forEach(m => {
     if (!m.roles.includes(role)) return;
-    const isActive = activeHref && location.pathname.endsWith(m.href.replace("/", ""));
-    html += `<a href="${m.href}" class="nav-item${isActive ? " active" : ""}">
-      <span class="nav-icon">${m.icon}</span>${m.label}</a>`;
+    const isActive = activeHref && location.pathname.endsWith(m.href);
+    html += `<button onclick="goToPage('${m.href}')" class="nav-item${isActive ? " active" : ""}">
+      <span class="nav-icon">${m.icon}</span>${m.label}</button>`;
   });
   html += `<hr class="nav-divider">
     <button class="nav-item btn-logout" onclick="logout()">
@@ -168,7 +182,7 @@ function renderNav(activeHref) {
 function logout() {
   if (!confirm("Yakin logout?")) return;
   clearSession();
-  location.href = "/index.html";
+  goToPage("index.html");
 }
 
 // ── Pengaturan Cache ──
