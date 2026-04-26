@@ -261,14 +261,22 @@
 <script src="js/utils.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 <script>
-const session = requireSession(["Owner","Admin"]);
+const session = requireSession(["Owner","Admin","Kasir"]);
 let allProduk = [];
 let allKategori = [];
 let searchTimer = null;
 
 (async function() {
+  if (!session) return;
   initSidebar();
   renderNav();
+  
+  if (session.role === "Kasir") {
+    document.getElementById("btn-tambah").style.display = "none";
+    document.getElementById("btn-stok").style.display = "none";
+    document.getElementById("btn-kat").style.display = "none";
+  }
+
   const cfg = await getConfig();
   if (cfg.nama_toko) document.getElementById("sb-toko").textContent = cfg.nama_toko;
   
