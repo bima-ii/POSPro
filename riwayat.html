@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POSPro — Riwayat Transaksi</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div id="toast-container"></div>
+<div id="loading-overlay"><div class="spinner"></div><p>Memproses...</p></div>
+
+<div class="app-layout">
+  <!-- Sidebar -->
+  <div class="sidebar-overlay"></div>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>POSPro</h1>
+      <p id="sb-toko">Memuat...</p>
+    </div>
+    <div class="sidebar-user"></div>
+    <nav class="sidebar-nav"></nav>
+    <div class="sidebar-footer">POSPro v1.0 &copy; 2025</div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="page-header">
+      <div class="flex items-center gap-12">
+        <button class="hamburger">≡</button>
+        <h2>Riwayat Transaksi</h2>
+      </div>
+      <button id="btn-export" class="btn btn-success" style="display:none;" onclick="exportData()">📥 Export Excel</button>
+    </header>
+
+    <div class="page-body">
+      <div class="card mb-16">
+        <div class="card-body">
+          <div class="grid grid-4 gap-12">
+            <div>
+              <label class="form-label">Tanggal Mulai</label>
+              <input type="date" id="filter-start" class="form-control">
+            </div>
+            <div>
+              <label class="form-label">Tanggal Akhir</label>
+              <input type="date" id="filter-end" class="form-control">
+            </div>
+            <div id="filter-kasir-wrap" style="display:none;">
+              <label class="form-label">Kasir</label>
+              <select id="filter-kasir" class="form-control">
+                <option value="">Semua Kasir</option>
+              </select>
+            </div>
+            <div class="flex items-center" style="padding-top:28px;">
+              <button class="btn btn-primary" onclick="loadTransaksi()">Terapkan Filter</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>No Struk</th>
+                <th>Tanggal Jam</th>
+                <th>Kasir</th>
+                <th>Pelanggan</th>
+                <th>Total</th>
+                <th>Metode</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="trx-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal Detail -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3>Detail Transaksi</h3>
+      <button class="modal-close" onclick="closeModal('modal-detail')">×</button>
+    </div>
+    <div class="modal-body" id="detail-body">
+      <!-- Detail via JS -->
+    </div>
+    <div class="modal-footer" id="detail-footer">
+      <!-- Buttons -->
+    </div>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const session = requireSession(["Owner","Admin","Kasir"]);
+let allTrx = [];
+
+(async function() {
+  if (!session) return;
+  initSidebar();
+  renderNav();
+  
+  const cfg = await getConfig();
+  if (cfg.nama_toko) document.getElementById("sb-toko").textContent = cfg.nama_toko;
+
+  // Set default dates
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById("filter-start").value = today;
+  document.getElementById("filter-end").value = today;
+
+  if (session.role === "Owner" || session.role === "Admin") {
+    document.getElementById("filter-kasir-wrap").style.display = "block";
+    document.getElementById("btn-export").style.display = "inline-flex";
+    loadKasirOptions();
+  }
+
+  loadTransaksi();
+})();
+
+async function loadKasirOptions() {
+  if (session.role !== "Owner") return; // Hanya owner yg bisa ambil list users
+  const r = await apiFetch({ action: "getUsers" });
+  if (r.success) {
+    const sel = document.getElementById("filter-kasir");
+    r.data.forEach(u => {
+      if (u.role === "Kasir" || u.role === "Admin") {
+        sel.innerHTML += `<option value="${u.id}">${u.nama}</option>`;
+      }
+    });
+  }
+}
+
+function formatDateToDDMMYYYY(isoDate) {
+  if (!isoDate) return null;
+  const p = isoDate.split("-");
+  return `${p[2]}/${p[1]}/${p[0]}`;
+}
+
+async function loadTransaksi() {
+  showLoading();
+  const fStart = document.getElementById("filter-start").value;
+  const fEnd = document.getElementById("filter-end").value;
+  const fKasir = document.getElementById("filter-kasir") ? document.getElementById("filter-kasir").value : null;
+
+  const payload = { action: "getTransaksi" };
+  if (fStart) payload.filterTanggal = formatDateToDDMMYYYY(fStart);
+  if (fEnd) payload.filterTanggalSampai = formatDateToDDMMYYYY(fEnd);
+  if (fKasir) payload.filterKasir = fKasir;
+
+  const r = await apiFetch(payload);
+  hideLoading();
+  
+  const tb = document.getElementById("trx-tbody");
+  if (r.success) {
+    allTrx = r.data || [];
+    if (!allTrx.length) {
+      tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted">Tidak ada transaksi.</td></tr>`;
+      return;
+    }
+    let html = "";
+    allTrx.forEach((t, i) => {
+      let isVoid = t.status === "Void";
+      let badge = isVoid ? `<span class="badge badge-danger">Void</span>` : `<span class="badge badge-success">Selesai</span>`;
+      let trClass = isVoid ? 'class="tr-danger text-muted"' : '';
+      
+      html += `<tr ${trClass}>
+        <td class="font-semibold">${t.noStruk}</td>
+        <td>${t.tanggal} ${t.jam}</td>
+        <td>${t.namaKasir}</td>
+        <td>${t.pelanggan || '-'} ${t.meja ? `(Meja ${t.meja})` : ''}</td>
+        <td class="font-semibold">${formatRp(t.total)}</td>
+        <td>${t.metodeBayar}</td>
+        <td>${badge}</td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="lihatDetail('${t.id}')">Lihat</button>
+        </td>
+      </tr>`;
+    });
+    tb.innerHTML = html;
+  } else {
+    toastErr(r.message);
+  }
+}
+
+async function lihatDetail(id) {
+  const t = allTrx.find(x => x.id === id);
+  if (!t) return;
+  
+  showLoading();
+  const r = await apiFetch({ action: "getDetailTransaksi", idTransaksi: id });
+  hideLoading();
+  
+  if (!r.success) { toastErr(r.message); return; }
+  
+  const items = r.data || [];
+  let html = `
+    <div class="grid grid-2 gap-16 mb-16">
+      <div>
+        <p class="text-sm text-muted">No Struk</p>
+        <p class="font-semibold">${t.noStruk}</p>
+      </div>
+      <div>
+        <p class="text-sm text-muted">Tanggal</p>
+        <p class="font-semibold">${t.tanggal} ${t.jam}</p>
+      </div>
+      <div>
+        <p class="text-sm text-muted">Kasir</p>
+        <p class="font-semibold">${t.namaKasir}</p>
+      </div>
+      <div>
+        <p class="text-sm text-muted">Status</p>
+        <p class="font-semibold ${t.status==='Void'?'text-danger':'text-success'}">${t.status}</p>
+      </div>
+    </div>
+    
+    <table class="mb-16">
+      <thead><tr><th>Produk</th><th>Harga</th><th>Qty</th><th>Subtotal</th></tr></thead>
+      <tbody>
+  `;
+  items.forEach(i => {
+    html += `<tr>
+      <td>${i.namaProduk}</td>
+      <td>${formatRp(i.hargaSatuan)}</td>
+      <td>${i.qty}</td>
+      <td>${formatRp(i.subtotal)}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  
+  html += `
+    <div class="flex justify-end mb-16">
+      <div style="width:250px;">
+        <div class="flex justify-between mb-4"><span>Subtotal</span><span>${formatRp(t.subtotal)}</span></div>
+        <div class="flex justify-between mb-4"><span>Diskon</span><span>-${formatRp(t.diskon)}</span></div>
+        <div class="flex justify-between mb-4"><span>Pajak</span><span>${formatRp(t.pajak)}</span></div>
+        <div class="flex justify-between font-bold" style="font-size:16px; border-top:1px solid var(--border); padding-top:8px;">
+          <span>TOTAL</span><span>${formatRp(t.total)}</span>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById("detail-body").innerHTML = html;
+  
+  let fHtml = `<button class="btn btn-outline" onclick="closeModal('modal-detail')">Tutup</button>`;
+  if (t.status !== "Void" && (session.role === "Owner" || session.role === "Admin")) {
+    fHtml += `<button class="btn btn-danger" onclick="voidTrx('${t.id}')">Void Transaksi</button>`;
+  }
+  document.getElementById("detail-footer").innerHTML = fHtml;
+  
+  openModal('modal-detail');
+}
+
+async function voidTrx(id) {
+  if (!confirm("PERINGATAN: Transaksi yang di-void akan dikembalikan stoknya. Lanjutkan?")) return;
+  showLoading();
+  const r = await apiFetch({ action: "voidTransaksi", idTransaksi: id });
+  hideLoading();
+  if (r.success) {
+    toastOk("Transaksi berhasil di-void.");
+    closeModal('modal-detail');
+    loadTransaksi();
+  } else {
+    toastErr(r.message);
+  }
+}
+
+async function exportData() {
+  const fStart = document.getElementById("filter-start").value;
+  const fEnd = document.getElementById("filter-end").value;
+  
+  showLoading("Generate Excel...");
+  const payload = { action: "exportTransaksi" };
+  if (fStart) payload.tanggalDari = formatDateToDDMMYYYY(fStart);
+  if (fEnd) payload.tanggalSampai = formatDateToDDMMYYYY(fEnd);
+  
+  const r = await apiFetch(payload);
+  hideLoading();
+  if (r.success) {
+    const ws = XLSX.utils.aoa_to_sheet([r.headers, ...r.data]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
+    XLSX.writeFile(wb, `POSPro_Transaksi_${fStart||'all'}_${fEnd||'all'}.xlsx`);
+  } else {
+    toastErr(r.message);
+  }
+}
+</script>
+</body>
+</html>

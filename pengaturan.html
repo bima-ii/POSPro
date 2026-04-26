@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POSPro — Pengaturan</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div id="toast-container"></div>
+<div id="loading-overlay"><div class="spinner"></div><p>Memproses...</p></div>
+
+<div class="app-layout">
+  <!-- Sidebar -->
+  <div class="sidebar-overlay"></div>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>POSPro</h1>
+      <p id="sb-toko">Memuat...</p>
+    </div>
+    <div class="sidebar-user"></div>
+    <nav class="sidebar-nav"></nav>
+    <div class="sidebar-footer">POSPro v1.0 &copy; 2025</div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="page-header">
+      <div class="flex items-center gap-12">
+        <button class="hamburger">≡</button>
+        <h2>Pengaturan & Manajemen User</h2>
+      </div>
+    </header>
+
+    <div class="page-body">
+      
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchMainTab('toko')">Pengaturan Toko</button>
+        <button class="tab-btn" onclick="switchMainTab('user')">Manajemen User</button>
+      </div>
+
+      <!-- TAB: PENGATURAN TOKO -->
+      <div class="tab-panel active" id="tab-toko">
+        <div class="grid grid-2 gap-20">
+          
+          <div class="card">
+            <div class="card-header">Profil Toko</div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Nama Toko</label>
+                <div class="input-group">
+                  <input type="text" id="cfg-nama" class="form-control">
+                  <button class="btn btn-primary" onclick="simpanCfg('nama_toko', 'cfg-nama')">Simpan</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Telepon</label>
+                <div class="input-group">
+                  <input type="text" id="cfg-telp" class="form-control">
+                  <button class="btn btn-primary" onclick="simpanCfg('telepon', 'cfg-telp')">Simpan</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Alamat Lengkap</label>
+                <div class="input-group">
+                  <textarea id="cfg-alamat" class="form-control" style="min-height:60px;"></textarea>
+                  <button class="btn btn-primary" onclick="simpanCfg('alamat', 'cfg-alamat')">Simpan</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Logo URL</label>
+                <div class="input-group mb-8">
+                  <input type="text" id="cfg-logo" class="form-control">
+                  <button class="btn btn-primary" onclick="simpanCfg('logo_url', 'cfg-logo')">Simpan</button>
+                </div>
+                <img id="preview-logo" src="" style="max-height:60px; display:none;">
+              </div>
+            </div>
+          </div>
+          
+          <div class="card">
+            <div class="card-header">Pengaturan Sistem & Struk</div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Pajak / PPN (%)</label>
+                <div class="input-group">
+                  <input type="number" id="cfg-pajak" class="form-control" min="0">
+                  <button class="btn btn-primary" onclick="simpanCfg('pajak_persen', 'cfg-pajak')">Simpan</button>
+                </div>
+                <small class="text-muted">Isi 0 jika tidak ada pajak. Default: 11</small>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nomor WhatsApp Struk</label>
+                <div class="input-group">
+                  <input type="text" id="cfg-wa" class="form-control" placeholder="62812xxx">
+                  <button class="btn btn-primary" onclick="simpanCfg('wa_struk', 'cfg-wa')">Simpan</button>
+                </div>
+                <small class="text-muted">Gunakan format 62xxx (tanpa +)</small>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Pesan Struk Bawah</label>
+                <div class="input-group">
+                  <input type="text" id="cfg-pesan" class="form-control">
+                  <button class="btn btn-primary" onclick="simpanCfg('pesan_struk', 'cfg-pesan')">Simpan</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- TAB: MANAJEMEN USER -->
+      <div class="tab-panel" id="tab-user">
+        <div class="card">
+          <div class="card-header flex justify-between items-center">
+            <span>Daftar Pengguna Aplikasi</span>
+            <button class="btn btn-primary btn-sm" onclick="openModalUser()">+ Tambah User</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID / Username</th>
+                  <th>Nama Lengkap</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="user-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Modal User -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h3 id="modal-user-title">Tambah User</h3>
+      <button class="modal-close" onclick="closeModal('modal-user')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label required">ID Kasir / Username</label>
+        <input type="text" id="inp-u-id" class="form-control" placeholder="Tidak bisa diubah setelah dibuat">
+      </div>
+      <div class="form-group">
+        <label class="form-label required">Nama Lengkap</label>
+        <input type="text" id="inp-u-nama" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label required">Password</label>
+        <input type="text" id="inp-u-pwd" class="form-control" placeholder="Kosongkan jika tidak ingin diubah (Edit)">
+      </div>
+      <div class="form-group" id="wrap-u-role">
+        <label class="form-label">Role</label>
+        <select id="inp-u-role" class="form-control">
+          <option value="Kasir">Kasir</option>
+          <option value="Admin">Admin</option>
+          <option value="Owner">Owner</option>
+        </select>
+      </div>
+      <div class="form-group" id="wrap-u-aktif" style="display:none;">
+        <label class="form-label">Status</label>
+        <select id="inp-u-aktif" class="form-control">
+          <option value="1">Aktif</option>
+          <option value="0">Nonaktif</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-user')">Batal</button>
+      <button class="btn btn-primary" onclick="simpanUser()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script>
+const session = requireSession(["Owner"]);
+let allUsers = [];
+
+(async function() {
+  initSidebar();
+  renderNav();
+  
+  showLoading();
+  const cfg = await getConfig();
+  hideLoading();
+  
+  if (cfg.nama_toko) {
+    document.getElementById("sb-toko").textContent = cfg.nama_toko;
+    document.getElementById("cfg-nama").value = cfg.nama_toko;
+  }
+  document.getElementById("cfg-telp").value = cfg.telepon || "";
+  document.getElementById("cfg-alamat").value = cfg.alamat || "";
+  document.getElementById("cfg-pajak").value = cfg.pajak_persen || "0";
+  document.getElementById("cfg-wa").value = cfg.wa_struk || "";
+  document.getElementById("cfg-pesan").value = cfg.pesan_struk || "";
+  
+  if (cfg.logo_url) {
+    document.getElementById("cfg-logo").value = cfg.logo_url;
+    document.getElementById("preview-logo").src = cfg.logo_url;
+    document.getElementById("preview-logo").style.display = "block";
+  }
+})();
+
+function switchMainTab(id) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  
+  if (id === 'user') loadUsers();
+}
+
+async function simpanCfg(key, elId) {
+  const val = document.getElementById(elId).value;
+  showLoading();
+  const r = await apiFetch({ action: "updatePengaturan", key: key, value: val });
+  hideLoading();
+  if (r.success) {
+    toastOk("Pengaturan disimpan");
+    if (key === "logo_url" && val) {
+      document.getElementById("preview-logo").src = val;
+      document.getElementById("preview-logo").style.display = "block";
+    }
+  } else {
+    toastErr(r.message);
+  }
+}
+
+// -- USER MANAGEMENT --
+async function loadUsers() {
+  showLoading();
+  const r = await apiFetch({ action: "getUsers" });
+  hideLoading();
+  if (r.success) {
+    allUsers = r.data || [];
+    renderUsers();
+  }
+}
+
+function renderUsers() {
+  const tb = document.getElementById("user-tbody");
+  if (!allUsers.length) {
+    tb.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Belum ada data</td></tr>`;
+    return;
+  }
+  let html = "";
+  allUsers.forEach(u => {
+    let roleBadge = `<span class="user-role role-${u.role.toLowerCase()}">${u.role}</span>`;
+    let actBadge = u.aktif==='1' ? `<span class="badge badge-success">Aktif</span>` : `<span class="badge badge-danger">Nonaktif</span>`;
+    
+    html += `<tr>
+      <td class="font-bold">${u.id}</td>
+      <td>${u.nama}</td>
+      <td>${roleBadge}</td>
+      <td>${actBadge}</td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick='editUser(${JSON.stringify(u)})'>Edit</button>
+      </td>
+    </tr>`;
+  });
+  tb.innerHTML = html;
+}
+
+let isEditUser = false;
+function openModalUser() {
+  isEditUser = false;
+  document.getElementById("modal-user-title").textContent = "Tambah User Baru";
+  document.getElementById("inp-u-id").value = "";
+  document.getElementById("inp-u-id").disabled = false;
+  document.getElementById("inp-u-nama").value = "";
+  document.getElementById("inp-u-pwd").value = "";
+  document.getElementById("wrap-u-role").style.display = "block";
+  document.getElementById("inp-u-role").value = "Kasir";
+  document.getElementById("wrap-u-aktif").style.display = "none";
+  openModal("modal-user");
+}
+
+function editUser(u) {
+  isEditUser = true;
+  document.getElementById("modal-user-title").textContent = "Edit User";
+  document.getElementById("inp-u-id").value = u.id;
+  document.getElementById("inp-u-id").disabled = true;
+  document.getElementById("inp-u-nama").value = u.nama;
+  document.getElementById("inp-u-pwd").value = "";
+  document.getElementById("wrap-u-role").style.display = "none";
+  document.getElementById("inp-u-aktif").value = u.aktif;
+  document.getElementById("wrap-u-aktif").style.display = "block";
+  openModal("modal-user");
+}
+
+async function simpanUser() {
+  const id = document.getElementById("inp-u-id").value.trim();
+  const nama = document.getElementById("inp-u-nama").value.trim();
+  const pwd = document.getElementById("inp-u-pwd").value;
+  
+  if (!id || !nama) { toastErr("ID dan Nama wajib diisi"); return; }
+  
+  showLoading();
+  let payload = {};
+  if (isEditUser) {
+    payload = {
+      action: "updateUser",
+      id: id,
+      updateData: { nama: nama, aktif: document.getElementById("inp-u-aktif").value }
+    };
+    if (pwd) payload.updateData.password = pwd;
+  } else {
+    if (!pwd) { hideLoading(); toastErr("Password wajib diisi untuk user baru"); return; }
+    payload = {
+      action: "simpanUser",
+      userData: {
+        id: id,
+        nama: nama,
+        password: pwd,
+        role: document.getElementById("inp-u-role").value
+      }
+    };
+  }
+  
+  const r = await apiFetch(payload);
+  hideLoading();
+  if (r.success) {
+    toastOk("Data user tersimpan");
+    closeModal("modal-user");
+    loadUsers();
+  } else {
+    toastErr(r.message);
+  }
+}
+</script>
+</body>
+</html>

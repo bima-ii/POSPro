@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POSPro — Login</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-wrap {
+      width: 100%;
+      max-width: 400px;
+      padding: 16px;
+    }
+
+    .login-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px 36px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, .4);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .login-logo h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0EA5E9;
+      letter-spacing: -1px;
+    }
+
+    .login-logo .toko-name {
+      font-size: 15px;
+      color: #64748B;
+      margin-top: 4px;
+      min-height: 20px;
+    }
+
+    .login-logo .app-sub {
+      font-size: 12px;
+      color: #94A3B8;
+    }
+
+    .divider {
+      text-align: center;
+      margin: 20px 0 24px;
+      color: #94A3B8;
+      font-size: 12px;
+      position: relative;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: calc(50% - 30px);
+      height: 1px;
+      background: #E2E8F0;
+    }
+
+    .divider::before {
+      left: 0;
+    }
+
+    .divider::after {
+      right: 0;
+    }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      color: #94A3B8;
+    }
+
+    .eye-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #94A3B8;
+      padding: 0 4px;
+      font-size: 16px;
+    }
+
+    .pwd-wrap {
+      position: relative;
+    }
+
+    .pwd-wrap .form-control {
+      padding-right: 40px;
+    }
+
+    .pwd-wrap .eye-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .error-msg {
+      background: #FEF2F2;
+      color: #DC2626;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .error-msg.show {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="toast-container"></div>
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <p>Memproses...</p>
+  </div>
+
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">
+        <div id="logo-img"></div>
+        <h1>POSPro</h1>
+        <div class="toko-name" id="nama-toko">Memuat...</div>
+        <div class="app-sub">Point of Sale &amp; Manajemen Toko</div>
+      </div>
+
+      <div class="error-msg" id="err-msg"></div>
+
+      <div class="form-group">
+        <label class="form-label">ID Kasir / Username</label>
+        <input type="text" id="inp-id" class="form-control" placeholder="Masukkan ID anda" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="pwd-wrap">
+          <input type="password" id="inp-pwd" class="form-control" placeholder="Password"
+            autocomplete="current-password">
+          <button class="eye-btn" id="eye-btn" type="button" onclick="togglePwd()"
+            title="Tampilkan password">👁</button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block btn-lg" id="btn-login" onclick="doLogin()">
+        Masuk
+      </button>
+
+      <div class="login-footer">POSPro v1.0 &copy; 2025</div>
+    </div>
+  </div>
+
+  <script src="/js/utils.js"></script>
+  <script>
+    // Jika sudah login, redirect ke halaman sesuai role
+    (function () {
+      const s = getSession();
+      if (s) redirectByRole(s.role);
+    })();
+
+    function redirectByRole(role) {
+      if (role === "Kasir") location.href = "/kasir.html";
+      else if (role === "Admin") location.href = "/kasir.html";
+      else location.href = "/kasir.html";
+    }
+
+    // Load nama toko
+    (async function () {
+      try {
+        const cfg = await getConfig();
+        const el = document.getElementById("nama-toko");
+        if (cfg.nama_toko) el.textContent = cfg.nama_toko;
+        else el.textContent = "POSPro";
+        if (cfg.logo_url) {
+          document.getElementById("logo-img").innerHTML =
+            `<img src="${cfg.logo_url}" style="height:56px;object-fit:contain;margin-bottom:8px">`;
+        }
+      } catch (e) {
+        document.getElementById("nama-toko").textContent = "POSPro";
+      }
+    })();
+
+    function togglePwd() {
+      const inp = document.getElementById("inp-pwd");
+      inp.type = inp.type === "password" ? "text" : "password";
+    }
+
+    function showErr(msg) {
+      const el = document.getElementById("err-msg");
+      el.textContent = msg; el.classList.add("show");
+    }
+    function hideErr() { document.getElementById("err-msg").classList.remove("show"); }
+
+    document.getElementById("inp-pwd").addEventListener("keydown", e => {
+      if (e.key === "Enter") doLogin();
+    });
+    document.getElementById("inp-id").addEventListener("keydown", e => {
+      if (e.key === "Enter") document.getElementById("inp-pwd").focus();
+    });
+
+    let isSubmitting = false;
+    async function doLogin() {
+      if (isSubmitting) return;
+      hideErr();
+
+      const id = document.getElementById("inp-id").value.trim();
+      const pwd = document.getElementById("inp-pwd").value;
+      if (!id || !pwd) { showErr("ID dan password wajib diisi."); return; }
+
+      const btn = document.getElementById("btn-login");
+      isSubmitting = true;
+      btn.disabled = true;
+      btn.textContent = "Memproses...";
+
+      try {
+        const r = await apiFetch({ action: "login", id, password: pwd });
+        if (!r.success) { showErr(r.message || "Login gagal."); return; }
+        setSession({ id: r.id, nama: r.nama, role: r.role });
+        redirectByRole(r.role);
+      } catch (e) {
+        showErr("Koneksi gagal: " + e.message);
+      } finally {
+        isSubmitting = false;
+        btn.disabled = false;
+        btn.textContent = "Masuk";
+      }
+    }
+  </script>
+</body>
+
+</html>
