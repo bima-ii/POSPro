@@ -264,17 +264,18 @@ async function lihatDetail(id) {
 }
 
 async function voidTrx(id) {
-  if (!confirm("PERINGATAN: Transaksi yang di-void akan dikembalikan stoknya. Lanjutkan?")) return;
-  showLoading();
-  const r = await apiFetch({ action: "voidTransaksi", idTransaksi: id });
-  hideLoading();
-  if (r.success) {
-    toastOk("Transaksi berhasil di-void.");
-    closeModal('modal-detail');
-    loadTransaksi();
-  } else {
-    toastErr(r.message);
-  }
+  confirmDialog("PERINGATAN: Transaksi yang di-void akan dikembalikan stoknya. Lanjutkan?", async () => {
+    showLoading();
+    const r = await apiFetch({ action: "voidTransaksi", idTransaksi: id });
+    hideLoading();
+    if (r.success) {
+      toastOk("Transaksi berhasil di-void.");
+      closeModal('modal-detail');
+      loadTransaksi();
+    } else {
+      toastErr(r.message);
+    }
+  });
 }
 
 async function exportData() {
