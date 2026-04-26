@@ -136,6 +136,7 @@ let chart7 = null;
 let chartMetode = null;
 
 (async function() {
+  if (!session) return;
   initSidebar();
   renderNav();
   const cfg = await getConfig();
@@ -143,7 +144,14 @@ let chartMetode = null;
   
   document.getElementById("inp-shift-tgl").value = new Date().toISOString().split('T')[0];
   
-  loadDashboard();
+  if (session.role === "Admin") {
+    // Admin hanya punya akses ke Laporan Shift
+    const btnDash = document.querySelector(".tab-btn[onclick=\"switchMainTab('dashboard')\"]");
+    if (btnDash) btnDash.style.display = "none";
+    switchMainTab("shift");
+  } else {
+    loadDashboard();
+  }
 })();
 
 function switchMainTab(id) {
