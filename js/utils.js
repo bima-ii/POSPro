@@ -2,7 +2,7 @@
 // POSPro - Shared Utilities (utils.js)
 // ============================================================
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypBqJkk9IguUJnym0AIonG3nf498sE2CXRnH8qKMfbopU8Jr6g3faNWCGI4pTjWItA4w/exec";
+const APPS_SCRIPT_URL = "GANTI_DENGAN_URL_APPS_SCRIPT_KAMU";
 
 // ── Routing Helper ──
 function goToPage(page) {
@@ -154,7 +154,7 @@ function renderNav(activeHref) {
   const menus = [
     { href: "kasir.html", icon: "🛒", label: "Kasir", roles: ["Owner", "Admin", "Kasir"] },
     { href: "riwayat.html", icon: "📋", label: "Riwayat", roles: ["Owner", "Admin", "Kasir"] },
-    { href: "produk.html", icon: "📦", label: "Produk & Stok", roles: ["Owner", "Admin"] },
+    { href: "produk.html", icon: "📦", label: "Produk & Stok", roles: ["Owner", "Admin", "Kasir"] },
     { href: "laporan.html", icon: "📊", label: "Laporan", roles: ["Owner", "Admin"] },
     { href: "pengaturan.html", icon: "⚙️", label: "Pengaturan", roles: ["Owner"] },
   ];
