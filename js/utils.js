@@ -2,7 +2,7 @@
 // POSPro - Shared Utilities (utils.js)
 // ============================================================
 
-const APPS_SCRIPT_URL = "GANTI_DENGAN_URL_APPS_SCRIPT_KAMU";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypBqJkk9IguUJnym0AIonG3nf498sE2CXRnH8qKMfbopU8Jr6g3faNWCGI4pTjWItA4w/exec";
 
 // ── Routing Helper ──
 function goToPage(page) {
