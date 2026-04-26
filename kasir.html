@@ -566,11 +566,12 @@ async function ambilHold(id) {
   } else { toastErr(r.message); }
 }
 async function hapusHold(id) {
-  if (!confirm("Hapus hold ini?")) return;
-  showLoading();
-  const r = await apiFetch({ action: "hapusHoldTransaksi", idHold: id });
-  hideLoading();
-  if (r.success) { openHoldModal(); }
+  confirmDialog("Hapus hold ini?", async () => {
+    showLoading();
+    const r = await apiFetch({ action: "hapusHoldTransaksi", idHold: id });
+    hideLoading();
+    if (r.success) { openHoldModal(); }
+  });
 }
 
 // -- BAYAR --
